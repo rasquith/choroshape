@@ -411,7 +411,7 @@ class AreaPopDataset(object):
                     self.group_names[i] = self.group_names[
                         i] + ' ' + self.labeled_cutoffs[i]
 
-            bottom = str(c + self.punit)
+            bottom = '{:1.1f}'.format(c + self.punit)
 
         self.colordict = dict(zip(self.group_nums, self.group_names))
         self.colordict['NA'] = "insufficient data"
