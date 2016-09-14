@@ -1,11 +1,11 @@
 ## Synopsis
 
 ChoroShape is a software package designed to help data analysts without GIS expertise efficiently and cheaply create choropleth maps for presenting county-level data. ChoroShape is an open-source tool built on existing Python libraries—primarily GeoPandas, Pandas, numpy, and matplotlib. ChoroShape uses user-defined shapefiles or geopandas.data structures and user-defined county-level dataset. 
--To avoid requiring specialized GIS knowledge, the tool utilizes user-specified map shapefiles.
--A single entry point (“make_choropleth”) allows for simple, one-line map creation.
--The AreaPopDataset object accommodates ratio, percent, or count data and can split data by quantiles or user-specified cutoffs.
--The ChoroplethSyle object allows users to easily manipulate design elements.
--The CityInfo and CityLabel objects permit users to overlay cities 
+* To avoid requiring specialized GIS knowledge, the tool utilizes user-specified map shapefiles.
+* A single entry point (“make_choropleth”) allows for simple, one-line map creation.
+* The AreaPopDataset object accommodates ratio, percent, or count data and can split data by quantiles or user-specified cutoffs.
+* The ChoroplethSyle object allows users to easily manipulate design elements.
+* The CityInfo and CityLabel objects permit users to overlay cities 
 
 
 ## Code Example
