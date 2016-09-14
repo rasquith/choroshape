@@ -10,6 +10,8 @@ ChoroShape is a software package designed to help data analysts without GIS expe
 
 ## Code Example
 
+'''python
+
 fips_col = 'FIPS'
 total_col = 'total'
 data = fix_FIPS(acs_ratios, fips_col, '48')
@@ -38,6 +40,8 @@ for i, c in enumerate(data.columns[1:]):
     choropleth.ax.plot()
 
     choropleth.plot()
+
+'''
 
 ## Motivation
 
