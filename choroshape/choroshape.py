@@ -613,7 +613,7 @@ class ChoroplethStyle(object):
 class Choropleth(object):
 
     def __init__(self, area_data, ch_style=None, city_info=None, out_path='',
-                 savepdf=True):
+                 savepdf=True, showplot=False):
         '''Attributes:
             area_data(AreaPopDataSet object)
             city_info(CityInfo object)
@@ -665,6 +665,9 @@ class Choropleth(object):
 
         if self.savepdf:
             self.save_plot()
+
+        if self.showplot:
+            self.show_plot()
 
     def _add_cities(self, df):
         '''Plots and labels Texas cities'''
@@ -764,4 +767,6 @@ class Choropleth(object):
         # Create the output
         outfile = os.path.join(self.out_path, self.area_data.cat_name)
         plt.savefig(outfile, dpi=self.ch_style.resolution, bbox_inches='tight')
-        # plt.show()  #  uncomment this for a plot preview
+    
+    def show_plot(self)
+        plt.show()
