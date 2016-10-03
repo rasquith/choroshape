@@ -768,5 +768,5 @@ class Choropleth(object):
         outfile = os.path.join(self.out_path, self.area_data.cat_name)
         plt.savefig(outfile, dpi=self.ch_style.resolution, bbox_inches='tight')
     
-    def show_plot(self)
+    def show_plot(self):
         plt.show()
