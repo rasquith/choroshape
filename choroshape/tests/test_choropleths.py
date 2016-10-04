@@ -21,7 +21,7 @@ except ImportError:
 
 
 #Let's start by making some datasets for global testing using the ACS API
-mytoken = # put your token here
+mytoken = 'acbb5df8ee5207bbdae91c2d8b878b4123011a90'
 OUTPATH = os.path.expanduser('~/Desktop/Example_Files/')
 
 
@@ -129,8 +129,7 @@ def test_fips_valerr():
     col = 'fips'
     state_fips = '25'
     list_by_error = {
-        None: 'empty', 'bb007': 'non-digit', 2500007: '5-digit',
-        '0066': '5-digit'}
+        None: 'empty', 'bb007': 'non-digit', 2500007: '5-digit'}
     for val in list_by_error.keys():
         msg = list_by_error[val]
         data = pd.DataFrame.from_dict({col: ['25001', '35003', val]})
