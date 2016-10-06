@@ -387,6 +387,7 @@ class AreaPopDataset(object):
         self.data[self.grouped_col] = pd.cut(self.data[self.calculated_cat],
                                              self.bins, labels=self.group_nums,
                                              include_lowest=True)
+        print(self.bins)
 
 
     def _map_labels(self):
