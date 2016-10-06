@@ -367,10 +367,10 @@ class AreaPopDataset(object):
             self.group_nums = range(1, self.num_cats+1)
             # qcut divides data into equal groups
             self.data['comparison'], bins = pd.qcut(self.data[self.calculated_cat],
-                                                    self.num_cats,
-                                                    labels=self.group_nums,
-                                                    retbins=True,
-                                                    precision=self.prec)
+                                     self.num_cats,
+                                     labels=self.group_nums,
+                                     retbins=True,
+                                    precision=self.prec)
             bins = bins.round(self.prec)
             if self.prec == 0:
                 bins = bins.astype(int)
@@ -387,8 +387,6 @@ class AreaPopDataset(object):
         self.data[self.grouped_col] = pd.cut(self.data[self.calculated_cat],
                                              self.bins, labels=self.group_nums,
                                              include_lowest=True)
-        print(self.bins)
-
 
     def _map_labels(self):
         '''Takes the cutoffs and creates labels)
