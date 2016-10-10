@@ -325,11 +325,11 @@ class AreaPopDataset(object):
             x for x in [
                 self.FIPS_col, self.cat_col, self.total_col] if x is not None]
         self.data = self.data.loc[:, self.valid_cols]
-
         self._merge_geodataframe()
 
         # this cycles through the valid columns to make float format
         self._totals_to_float()
+
         # Find which columns are being used and if needed, calculate the ratio
         self._calculate_cat()
         self._make_binned_cats()
@@ -410,7 +410,7 @@ class AreaPopDataset(object):
                     self.group_names[i] = self.group_names[
                         i] + ' ' + self.labeled_cutoffs[i]
 
-            bottom = '{:1.1f}'.format(c + self.punit)
+            bottom = str(c + self.punit)
 
         self.colordict = dict(zip(self.group_nums, self.group_names))
         self.colordict['NA'] = "insufficient data"
@@ -628,6 +628,7 @@ class Choropleth(object):
         self.city_info = city_info
         self.out_path = os.path.normpath(out_path)
         self.savepdf = savepdf
+        self.showplot= showplot
         self.num_bins = len(self.area_data.bins)
 
         self.legx = self.ch_style.legx
