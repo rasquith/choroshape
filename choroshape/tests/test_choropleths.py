@@ -21,7 +21,7 @@ except ImportError:
 
 
 #Let's start by making some datasets for global testing using the ACS API
-mytoken = 'acbb5df8ee5207bbdae91c2d8b878b4123011a90'
+mytoken =  # put your token here
 OUTPATH = os.path.expanduser('~/Desktop/Example_Files/')
 
 
@@ -56,12 +56,12 @@ def create_totaldf():
     return census_call(total_url, total_code, 'total_pop').iloc[:, 1:]
 
 
-#Creates a dict for storing the DataFrames
+# Creates a dict for storing the DataFrames
 @pytest.fixture(scope="module")
 def create_data_dict(create_totaldf):
     '''Pulls data from the census and returns a dict of dataframes'''
     df_total = create_totaldf
-    #Creates a total dataframe first
+    # Creates a total dataframe first
     table_dict = {'B01001_037E': 'Female: 35 to 39 years',
                   'B05001_005E': 'U.S. citizen by naturalization',
                   'B06008_002E': 'Never married'}
@@ -70,14 +70,14 @@ def create_data_dict(create_totaldf):
         url = make_url(key)
         label = table_dict[key]
         df = census_call(url, key, label)
-        #Merges with the total df
+        # Merges with the total df
         df = pd.merge(df_total, df, how='inner', on=['state', 'county'])
         df = df[['NAME', 'state', 'county', label, 'total_pop']]
         df[label] = df[label].astype(float)
         df['total_pop'] = df['total_pop'].astype(float)
-        #Creates a proportion for later testing
+        # Creates a proportion for later testing
         df['ratio'] = df[label]/df['total_pop']
-        #store the df in the dict and now we have some df's for testing!
+        # store the df in the dict and now we have some df's for testing!
         df = fix_FIPS(df, 'county', 'state')
         df_dict[label] = df
     return df_dict
@@ -262,6 +262,7 @@ def test_area_pop_data(create_data_dict, create_shape_files, create_totaldf):
         y = len((apd.data[apd.data[apd.grouped_col] == 7]).index)
         # Groups should be more or less equal
         assert abs(x-y) <= 5
+
 
 def test_make_choropleth(create_data_dict, create_shape_files):
     datafiles = {}
