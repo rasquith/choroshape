@@ -72,10 +72,10 @@ def fix_FIPS(data, county_col, state_FIPS=None):
         raise ValueError('Data contains empty FIPS code values.')
 
     # Clean the county codes
-    data[county_col] = data[county_col].map(
+    data[county_col] = data.loc[:,county_col].map(
         lambda x: clean_FIPS(x))
 
-    data[county_col] = data[county_col].apply(
+    data[county_col] = data.loc[:,county_col].apply(
         lambda x: x.zfill(3) if len(x) < 3 else x)
 
     # check if state codes need to be added
@@ -91,10 +91,10 @@ def fix_FIPS(data, county_col, state_FIPS=None):
             state_col = 'state_FIPS'
             data[state_col] = state_FIPS  # create a state FIPS column
 
-        data[state_col] = data[state_col].map(
+        data[state_col] = data.loc[:,state_col].map(
             lambda x: clean_FIPS(x))  # clean the state FIPS column
 
-        data[county_col] = data[county_col].apply(
+        data[county_col] = data.loc[:,county_col].apply(
             lambda x: x[-3:])  # Make it all consistent
         data[county_col] = data[state_col].str.cat(data[county_col], sep='')
 
@@ -393,10 +393,11 @@ class AreaPopDataset(object):
         '''
         sign = ''
         bottom = '0'
+        bottom_format = '{:1.%sf}' % str(self.prec)
         if self.percent_format:
             sign = '%'
         for i, c in enumerate(self.bins[1:]):
-            cutoff = '{:1.1f}'.format(c)
+            cutoff = bottom_format.format(c)
             if i == 0:
                 self.group_names.append(cutoff + sign + ' or less')
             elif i == len(self.bins)-2:
@@ -409,7 +410,6 @@ class AreaPopDataset(object):
                 if i in self.labeled_cutoffs.keys():
                     self.group_names[i] = self.group_names[
                         i] + ' ' + self.labeled_cutoffs[i]
-            bottom_format = '{:1.%sf}' % str(self.prec)
             bottom = bottom_format.format(c + self.punit)
 
         self.colordict = dict(zip(self.group_nums, self.group_names))

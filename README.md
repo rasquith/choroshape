@@ -26,7 +26,7 @@ Choroshape aims to help analysts automate choropleth map creation.
 
 ## Installation
 
-Instillation is from github at tk
+Instillation is from github at https://github.com/rasquith/choroshape.git.
 
 
 ## Tests
@@ -35,7 +35,7 @@ Software is in alpha and tests are currently under development
 
 ## Contributors
 
-Choroshape was originally designed by R.A. Asquith at tk while working the Texas Department of State Health Services. Contributions can be made through github at tk.
+Choroshape was originally designed by R.A. Asquith at https://github.com/rasquith while working the Texas Department of State Health Services. Contributions can be made through github at https://github.com/rasquith/choroshape.
 
 ## License
 
