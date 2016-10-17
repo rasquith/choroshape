@@ -170,7 +170,6 @@ def test_area_pop_data(create_data_dict, create_shape_files, create_totaldf):
         geodf = gpd.GeoDataFrame.from_file(fn)
         geodf = fix_FIPS(geodf, 'COUNTYFP', 'STATEFP')
         for key, df in create_data_dict.items():
-            df = df[df['FIPS'] == 48]
             # Scenario 1: Total col and cat col are passed
             # Ratio is calculated in object
             apd_postcalc = AreaPopDataset(df, geodf, FIPS_col, geoFIPS_col,
@@ -219,7 +218,7 @@ def test_area_pop_data(create_data_dict, create_shape_files, create_totaldf):
             print(x, y)
             assert abs(x-y) <= 5
 
-            # Scenario 6: Have it calculate the bins alone
+            # Scenario 4: Have it calculate the bins and the ratio
             apd = AreaPopDataset(df, geodf, FIPS_col, geoFIPS_col,
                                  cat_col=key, total_col='total_pop',
                                  footnote='Map Created by testing',
@@ -233,9 +232,9 @@ def test_area_pop_data(create_data_dict, create_shape_files, create_totaldf):
             y = len((apd.data[apd.data[apd.grouped_col] == 7]).index)
             # Groups should be more or less equal
             print(x, y)
-            assert abs(x-y) <= 5
+            assert abs(x-y) <= 10
 
-            # Scenario 6: Have it calculate the bins alone
+            # Scenario 5: Have it calculate the bins  and the ratio
             apd = AreaPopDataset(df, geodf, FIPS_col, geoFIPS_col,
                                  cat_col=key, total_col='total_pop',
                                  footnote='Map Created by testing',
@@ -252,7 +251,24 @@ def test_area_pop_data(create_data_dict, create_shape_files, create_totaldf):
             print(x, y)
             assert abs(x-y) <= 10
 
-        # Scenario 5: Only a total col is passed
+            # Scenario 6: Have it decrease the bins
+            apd = AreaPopDataset(df, geodf, FIPS_col, geoFIPS_col,
+                                 cat_col=key, total_col='total_pop',
+                                 footnote='Map Created by testing',
+                                 cat_name=key, title=key,
+                                 bins=None,
+                                 num_cats=20, precision=2)
+            # Check that an AreaPopDataset object is returned
+            assert isinstance(apd, AreaPopDataset)
+            # A lot of the bins will be overlapping in this case
+            assert (len(apd.bins) <= 21)
+            x = len((apd.data[apd.data[apd.grouped_col] == 1]).index)
+            y = len((apd.data[apd.data[apd.grouped_col] == 7]).index)
+            # Groups should be more or less equal
+            print(x, y)
+            assert abs(x-y) <= 10
+
+        # Scenario 7: Only a total col is passed, bins are calculated
         totaldf = fix_FIPS(create_totaldf, 'county', 'state')
         apd_total = AreaPopDataset(totaldf, geodf, FIPS_col, geoFIPS_col,
                                    total_col='total_pop',
@@ -261,7 +277,7 @@ def test_area_pop_data(create_data_dict, create_shape_files, create_totaldf):
         # Check that an AreaPopDataset object is returned
         assert isinstance(apd_total, AreaPopDataset)
         x = len((apd.data[apd.data[apd.grouped_col] == 1]).index)
-        y = len((apd.data[apd.data[apd.grouped_col] == 7]).index)
+        y = len((apd.data[apd.data[apd.grouped_col] == 4]).index)
         # Groups should be more or less equal
         print(x, y)
         assert abs(x-y) <= 5
