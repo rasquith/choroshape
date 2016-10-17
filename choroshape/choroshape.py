@@ -72,10 +72,10 @@ def fix_FIPS(data, county_col, state_FIPS=None):
         raise ValueError('Data contains empty FIPS code values.')
 
     # Clean the county codes
-    data[county_col] = data.loc[:,county_col].map(
+    data[county_col] = data.loc[:, county_col].map(
         lambda x: clean_FIPS(x))
 
-    data[county_col] = data.loc[:,county_col].apply(
+    data[county_col] = data.loc[:, county_col].apply(
         lambda x: x.zfill(3) if len(x) < 3 else x)
 
     # check if state codes need to be added
@@ -85,21 +85,22 @@ def fix_FIPS(data, county_col, state_FIPS=None):
         else:
             state_FIPS = clean_FIPS(state_FIPS)
             if len(state_FIPS) != 2:
-                raise ValueError('Data contains State FIPS not in a readable ' +
-                                 'format. Entry must be a string column name ' +
-                                 'or a 2-digit state FIPS code')
+                raise ValueError('Data contains State FIPS not in a ' +
+                                 'readable format. Entry must be a string ' +
+                                 'column name or a 2-digit state FIPS code')
             state_col = 'state_FIPS'
             data[state_col] = state_FIPS  # create a state FIPS column
 
-        data[state_col] = data.loc[:,state_col].map(
+        data[state_col] = data.loc[:, state_col].map(
             lambda x: clean_FIPS(x))  # clean the state FIPS column
 
-        data[county_col] = data.loc[:,county_col].apply(
+        data[county_col] = data.loc[:, county_col].apply(
             lambda x: x[-3:])  # Make it all consistent
         data[county_col] = data[state_col].str.cat(data[county_col], sep='')
 
     # Check that codes are the right length
-    data[county_col] = data[county_col].str.zfill(5)  # if it drops leading zeros
+    # if it drops leading zeros
+    data[county_col] = data[county_col].str.zfill(5)
     if (data[county_col].str.len() == 5).all():  # codes already combined
         data[FIPS_col] = data[county_col]
     else:
@@ -364,29 +365,31 @@ class AreaPopDataset(object):
         which codes the groups with integers''
         '''
         if self.bins is None:
-            self.group_nums = range(1, self.num_cats+1)
-            # qcut divides data into equal groups
-            self.data['comparison'], bins = pd.qcut(self.data[self.calculated_cat],
-                                     self.num_cats,
-                                     labels=self.group_nums,
-                                     retbins=True,
-                                    precision=self.prec)
-            bins = bins.round(self.prec)
-            if self.prec == 0:
-                bins = bins.astype(int)
-            # TODO find a better fix for this
-            bins = np.unique(bins)  # for too many bins/ overlaps created
-            self.bins = bins.tolist()
-
-        self.bins[0] = 0
-        # TODO find a more elegant solution for this
-        # punit is added to include values that have been roudnde up
-        self.bins[-1] += self.punit
-
-        self.group_nums = range(1, len(self.bins))
-        self.data[self.grouped_col] = pd.cut(self.data[self.calculated_cat],
-                                             self.bins, labels=self.group_nums,
-                                             include_lowest=True)
+            while self.bins is None or len(np.unique(
+                    self.bins).tolist()) < len(self.bins):
+                self.group_nums = range(1, self.num_cats+1)
+                # qcut divides data into equal groups
+                self.data[self.grouped_col], self.bins = pd.qcut(
+                    self.data[self.calculated_cat],
+                    self.num_cats,
+                    labels=self.group_nums,
+                    retbins=True,
+                    precision=self.prec)
+                self.num_cats = len(np.unique(self.bins).tolist())
+        else:
+            self.bins = np.asarray(self.bins).round(self.prec)
+            self.bins[0] = 0
+            # punit is added to include values that have been roudnde up
+            self.bins[-1] += self.punit
+            # for too many bins/ overlaps created
+            self.bins = np.unique(self.bins)
+            self.bins = self.bins.tolist()
+            self.group_nums = range(1, len(self.bins))
+            self.data[self.grouped_col] = pd.cut(
+                self.data[self.calculated_cat],
+                self.bins,
+                labels=self.group_nums,
+                include_lowest=True)
 
     def _map_labels(self):
         '''Takes the cutoffs and creates labels)
