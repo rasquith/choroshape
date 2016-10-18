@@ -176,8 +176,8 @@ def test_area_pop_data(create_data_dict, create_shape_files, create_totaldf):
                                           cat_col=key, total_col='total_pop',
                                           footnote='Map Created by testing',
                                           cat_name=key, title=key,
-                                          bins=[0, 25, 75, 100],
-                                          precision=3)
+                                          bins=[0, 3, 5, 10, 20],
+                                          precision=3, percent_format=True)
             # Check that an AreaPopDataset object is returned
             assert isinstance(apd_postcalc, AreaPopDataset)
             # Check that the groups are working
@@ -190,8 +190,8 @@ def test_area_pop_data(create_data_dict, create_shape_files, create_totaldf):
                                          cat_col='ratio',
                                          footnote='Map Created by testing',
                                          cat_name=key, title=key,
-                                         bins=[0, 25, 75, 100],
-                                         precision=3)
+                                         bins=[0, 10, 20, 30, 40],
+                                         precision=3, percent_format=True)
             # Check that an AreaPopDataset object is returned
             assert isinstance(apd_precalc, AreaPopDataset)
             # Check that the groups are working

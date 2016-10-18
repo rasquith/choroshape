@@ -365,8 +365,7 @@ class AreaPopDataset(object):
         which codes the groups with integers''
         '''
         if self.bins is None:
-            while self.bins is None or len(np.unique(
-                    self.bins).tolist()) < len(self.bins):
+            while self.bins is None or self.num_cats+1 < len(self.bins):
                 self.group_nums = range(1, self.num_cats+1)
                 # qcut divides data into equal groups
                 self.data[self.grouped_col], self.bins = pd.qcut(
@@ -375,24 +374,27 @@ class AreaPopDataset(object):
                     labels=self.group_nums,
                     retbins=True,
                     precision=self.prec)
-                self.num_cats = len(np.unique(self.bins).tolist())
+                self.num_cats = len(np.unique(self.bins).tolist())-1
+            print('for qcut', self.group_nums, self.num_cats)
         else:
             self.bins = np.asarray(self.bins).round(self.prec)
-            self.bins[0] = 0
-            # punit is added to include values that have been roudnde up
+            # The lower bound is zero here
+            if self.bins[0] != 0:
+                self.bins = [0] + self.bins
+            # punit is added to include values that have been roudnded up
             self.bins[-1] += self.punit
             # for too many bins get rid of overlaps
-            self.bins = np.unique(self.bins)
-            self.bins = self.bins.tolist()
-            self.num_cats = len(self.bins)
-            self.group_nums = range(1, self.num_cats)
-            print(self.group_nums, self.bins)
+            self.bins = np.unique(self.bins).tolist()
+            self.num_cats = len(self.bins)-1
+            self.group_nums = range(1, self.num_cats+1)
             self.data[self.grouped_col] = pd.cut(
                 self.data[self.calculated_cat],
                 self.bins,
                 labels=self.group_nums,
+                retbins=False,
                 include_lowest=True)
-            print(self.data.head())
+            print('for cut', self.group_nums, self.num_cats)
+        self.data[self.grouped_col] = self.data[self.grouped_col].astype(int)
 
     def _map_labels(self):
         '''Takes the cutoffs and creates labels)
@@ -421,6 +423,14 @@ class AreaPopDataset(object):
         self.colordict = dict(zip(self.group_nums, self.group_names))
         self.colordict['NA'] = "insufficient data"
         # Map the label column
+        print(self.data.dtypes)
+        print(self.data[(self.data[self.grouped_col] != 1)])
+        print('here it is')
+        for x in self.data[self.grouped_col]:
+            print(x)
+            print(self.colordict[x])
+        print('done')
+
         self.data[self.labels_col] = self.data[
             self.grouped_col].apply(lambda x: self.colordict[x])
 
