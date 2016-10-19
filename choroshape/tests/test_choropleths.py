@@ -232,7 +232,7 @@ def test_area_pop_data(create_data_dict, create_shape_files, create_totaldf):
             y = len((apd.data[apd.data[apd.grouped_col] == 7]).index)
             # Groups should be more or less equal
             print(x, y)
-            assert abs(x-y) <= 10
+            assert abs(x-y) <= 20
 
             # Scenario 5: Have it calculate the bins  and the ratio
             apd = AreaPopDataset(df, geodf, FIPS_col, geoFIPS_col,

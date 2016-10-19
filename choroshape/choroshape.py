@@ -394,7 +394,6 @@ class AreaPopDataset(object):
                 retbins=False,
                 include_lowest=True)
             print('for cut', self.group_nums, self.num_cats)
-        self.data[self.grouped_col] = self.data[self.grouped_col].astype(int)
 
     def _map_labels(self):
         '''Takes the cutoffs and creates labels)
@@ -420,19 +419,21 @@ class AreaPopDataset(object):
                         i] + ' ' + self.labeled_cutoffs[i]
             bottom = bottom_format.format(c + self.punit)
 
-        self.colordict = dict(zip(self.group_nums, self.group_names))
-        self.colordict['NA'] = "insufficient data"
-        # Map the label column
-        print(self.data.dtypes)
-        print(self.data[(self.data[self.grouped_col] != 1)])
-        print('here it is')
-        for x in self.data[self.grouped_col]:
-            print(x)
-            print(self.colordict[x])
-        print('done')
+        self.data[self.grouped_col].cat.rename_categories(self.group_names)
 
-        self.data[self.labels_col] = self.data[
-            self.grouped_col].apply(lambda x: self.colordict[x])
+        # self.colordict = dict(zip(self.group_nums, self.group_names))
+        # self.colordict['NA'] = "insufficient data"
+        # # Map the label column
+        # print(self.data.dtypes)
+        # print(self.data[(self.data[self.grouped_col] != 1)])
+        # print('here it is')
+        # for x in self.data[self.grouped_col]:
+        #     print(x)
+        #     print(self.colordict[x])
+        # print('done')
+
+        # self.data[self.labels_col] = self.data[
+        #     self.grouped_col].apply(lambda x: self.colordict[x])
 
     def _totals_to_float(self):
         '''Makes sure population counts are float and not string
