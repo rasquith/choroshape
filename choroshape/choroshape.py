@@ -359,28 +359,47 @@ class AreaPopDataset(object):
         self.data[self.calculated_cat] = self.data[
             self.calculated_cat].round(self.prec)
 
+    # def _make_binned_cats(self):
+    #     '''Makes the group column. The group column names categories according
+    #     to the cutoff bins. Then maps the group to a column called, color,
+    #     which codes the groups with integers''
+    #     '''
+    #     if self.bins is None:
+    #         while self.bins is None:
+    #             try:
+    #                 self.group_nums = range(1, self.num_cats+1)
+    #                 # qcut divides data into equal groups
+    #                 self.data[self.grouped_col], self.bins = pd.qcut(
+    #                     self.data[self.calculated_cat],
+    #                     self.num_cats,
+    #                     labels=self.group_nums,
+    #                     retbins=True,
+    #                     precision=self.prec)
+    #             except ValueError:
+    #                 self.num_cats = self.num_cats - 1
+    #             except:
+    #                 raise
+    #             print('bins', self.bins, 'number', self.num_cats)
+
     def _make_binned_cats(self):
         '''Makes the group column. The group column names categories according
         to the cutoff bins. Then maps the group to a column called, color,
         which codes the groups with integers''
         '''
         if self.bins is None:
-            while self.bins is None or self.num_cats+1 < len(self.bins):
-                self.group_nums = range(1, self.num_cats+1)
-                # qcut divides data into equal groups
-                self.data[self.grouped_col], self.bins = pd.qcut(
-                    self.data[self.calculated_cat],
-                    self.num_cats,
-                    labels=self.group_nums,
-                    retbins=True,
-                    precision=self.prec)
-                self.num_cats = len(np.unique(self.bins).tolist())-1
-            print('for qcut', self.group_nums, self.num_cats)
+            self.group_nums = range(1, self.num_cats+1)
+            # qcut divides data into equal groups
+            self.data[self.grouped_col], self.bins = pd.qcut(
+                self.data[self.calculated_cat],
+                self.num_cats,
+                labels=self.group_nums,
+                retbins=True,
+                precision=self.prec)
         else:
             self.bins = np.asarray(self.bins).round(self.prec)
             # The lower bound is zero here
             if self.bins[0] != 0:
-                self.bins = [0] + self.bins
+                self.bins = [0] + self.binss
             # punit is added to include values that have been roudnded up
             self.bins[-1] += self.punit
             # for too many bins get rid of overlaps
@@ -393,7 +412,6 @@ class AreaPopDataset(object):
                 labels=self.group_nums,
                 retbins=False,
                 include_lowest=True)
-            print('for cut', self.group_nums, self.num_cats)
 
     def _map_labels(self):
         '''Takes the cutoffs and creates labels)
@@ -419,7 +437,8 @@ class AreaPopDataset(object):
                         i] + ' ' + self.labeled_cutoffs[i]
             bottom = bottom_format.format(c + self.punit)
 
-        self.data[self.grouped_col].cat.rename_categories(self.group_names)
+        self.data[self.labels_col] = self.data[
+            self.grouped_col].cat.rename_categories(self.group_names)
 
         # self.colordict = dict(zip(self.group_nums, self.group_names))
         # self.colordict['NA'] = "insufficient data"

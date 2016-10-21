@@ -249,24 +249,17 @@ def test_area_pop_data(create_data_dict, create_shape_files, create_totaldf):
             y = len((apd.data[apd.data[apd.grouped_col] == 7]).index)
             # Groups should be more or less equal
             print(x, y)
-            assert abs(x-y) <= 10
+            assert abs(x-y) <= 20
 
-            # Scenario 6: Have it decrease the bins
-            apd = AreaPopDataset(df, geodf, FIPS_col, geoFIPS_col,
-                                 cat_col=key, total_col='total_pop',
-                                 footnote='Map Created by testing',
-                                 cat_name=key, title=key,
-                                 bins=None,
-                                 num_cats=20, precision=2)
-            # Check that an AreaPopDataset object is returned
-            assert isinstance(apd, AreaPopDataset)
-            # A lot of the bins will be overlapping in this case
-            assert (len(apd.bins) <= 21)
-            x = len((apd.data[apd.data[apd.grouped_col] == 1]).index)
-            y = len((apd.data[apd.data[apd.grouped_col] == 7]).index)
-            # Groups should be more or less equal
-            print(x, y)
-            assert abs(x-y) <= 10
+            # Scenario 6: Overlapping bins
+            with pytest.raises(ValueError) as excinfo:
+                apd = AreaPopDataset(df, geodf, FIPS_col, geoFIPS_col,
+                                     cat_col=key, total_col='total_pop',
+                                     footnote='Map Created by testing',
+                                     cat_name=key, title=key,
+                                     bins=None,
+                                     num_cats=20, precision=2)
+            assert 'edges' in str(excinfo.value)
 
         # Scenario 7: Only a total col is passed, bins are calculated
         totaldf = fix_FIPS(create_totaldf, 'county', 'state')
@@ -297,5 +290,3 @@ def test_make_choropleth(create_data_dict, create_shape_files):
                             title=key, footnote='Made for testing',
                             cat_name=name,
                             geoFIPS_col='COUNTYFP10', geometry_col=None)
-
-test_area_pop_data(create_data_dict(create_totaldf()), create_shape_files(), create_totaldf())
