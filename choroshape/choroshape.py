@@ -14,21 +14,6 @@ __all__ = [
     'Choropleth'
 ]
 
-# Patch for basestring
-try:
-    unicode = unicode
-except NameError:
-    # 'unicode' is undefined, must be Python 3
-    str = str
-    unicode = str
-    bytes = bytes
-    basestring = (str, bytes)
-else:
-    # 'unicode' exists, must be Python 2
-    str = str
-    unicode = unicode
-    bytes = str
-    basestring = basestring
 
 import geopandas as gpd
 import numpy as np
@@ -38,6 +23,7 @@ import os
 import textwrap
 import re
 import math
+from six import string_types
 
 from matplotlib import pyplot as plt, patches as mpatches
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap, hex2color
@@ -254,7 +240,7 @@ def make_choropleth(data_csv, shpfile, two_digit_state_FIPS,
 
 
 # TODO make category for NANs
-class AreaPopDataset(object):
+class AreaPopDataset_old(object):
     def __init__(self, data, geodata, FIPS_col, geoFIPS_col, cat_col=None,
                  total_col=None, footnote='', cat_name=None, title='',
                  bins=None, num_cats=4, precision=1,
@@ -359,27 +345,6 @@ class AreaPopDataset(object):
         self.data[self.calculated_cat] = self.data[
             self.calculated_cat].round(self.prec)
 
-    # def _make_binned_cats(self):
-    #     '''Makes the group column. The group column names categories according
-    #     to the cutoff bins. Then maps the group to a column called, color,
-    #     which codes the groups with integers''
-    #     '''
-    #     if self.bins is None:
-    #         while self.bins is None:
-    #             try:
-    #                 self.group_nums = range(1, self.num_cats+1)
-    #                 # qcut divides data into equal groups
-    #                 self.data[self.grouped_col], self.bins = pd.qcut(
-    #                     self.data[self.calculated_cat],
-    #                     self.num_cats,
-    #                     labels=self.group_nums,
-    #                     retbins=True,
-    #                     precision=self.prec)
-    #             except ValueError:
-    #                 self.num_cats = self.num_cats - 1
-    #             except:
-    #                 raise
-    #             print('bins', self.bins, 'number', self.num_cats)
 
     def _make_binned_cats(self):
         '''Makes the group column. The group column names categories according
@@ -440,19 +405,203 @@ class AreaPopDataset(object):
         self.data[self.labels_col] = self.data[
             self.grouped_col].cat.rename_categories(self.group_names)
 
-        # self.colordict = dict(zip(self.group_nums, self.group_names))
-        # self.colordict['NA'] = "insufficient data"
-        # # Map the label column
-        # print(self.data.dtypes)
-        # print(self.data[(self.data[self.grouped_col] != 1)])
-        # print('here it is')
-        # for x in self.data[self.grouped_col]:
-        #     print(x)
-        #     print(self.colordict[x])
-        # print('done')
+    def _totals_to_float(self):
+        '''Makes sure population counts are float and not string
+        self.data[c] could contain strings or floats
+        '''
+        for c in self.valid_cols[1:]:
+            self.data[c] = self.data[c].apply(
+                lambda x: str(x).replace(',', '')).astype(float)
 
-        # self.data[self.labels_col] = self.data[
-        #     self.grouped_col].apply(lambda x: self.colordict[x])
+    def _merge_geodataframe(self):
+        '''Merges the population data with the geodataframe'''
+        # merge population data with Texas GeoDataFrame
+        self.data = pd.merge(left=self.geodata, right=self.data, how='left',
+                             left_on=self.geoFIPS_col,
+                             right_on=self.FIPS_col)
+
+
+# TODO make category for NANs
+class AreaPopDataset(object):
+    def __init__(self, data, geodata, FIPS_col, geoFIPS_col, cat_col=None,
+                 total_col=None, footnote='', cat_name=None, title='',
+                 bins=None, num_cats=4, precision=1,
+                 labeled_cutoffs=None, percent_format=False,
+                 null='nan', supression='s'):
+        '''An object that holds data elements for the choropleth map.
+        Attributes:
+            data(pandas.DataFrame): dataframe with population data by county
+                and Texas county codes or FIPS codes
+            geodata(geopandas.Dataframe or str): Dataframe with shapefile
+                information or the name of county shapefile with the
+                extension '.shp'
+            FIPS_col(str): name of the pandas df column with complete
+                FIPS codes
+            geoFIPS_col(str): name of the geodf column with complete
+                FIPS codes
+            cat_col(str): name of df column with category totals
+                (e.g. 'population under 18'). If there's no category column
+                specified, total population will be the assumed category of
+                interest and no ratio will be calculated. Either cat_col or
+                total_col or both must be specified.
+            total_col(str): name of df column with total county populations.
+                Either cat_col or total_col or both must be specified.
+            footnote(str): Provenance info to add to the final map as
+                a footnote
+            cat_name(str): user determined name of population category of
+                interest
+            title(str): title for plot
+            bins(list[floats]): cutoffs for the creation of population ratio
+                groups
+            num_cats(int): how many categories to have for the choropleth map
+            precision(int): precision for bin cutoffs
+            labeled_cutoffs(dict{category_number(int, 0-indexed),
+                special label(str)}): specified labels for the categories.
+            percent_format(bool): indicates whether cutoffs are percentages
+            supression(str): indicates ratio value that represents supression.
+                '''
+        self.data = data
+        # Reads in a geodtaframe or a filename and converts it
+        if isinstance(geodata, gpd.GeoDataFrame):
+            self.geodata = geodata
+        else:
+            self.geodata = gpd.GeoDataFrame.from_file(geodata)
+
+        self.FIPS_col = FIPS_col
+        self.geoFIPS_col = geoFIPS_col
+        self.cat_col = cat_col
+        self.total_col = total_col
+        self.footnote = footnote
+        self.title = title
+        self.bins = bins
+        self.num_cats = num_cats
+        self.prec = precision
+        self.punit = 10 ** (-1*self.prec)
+        self.labels_col = 'labels'  # column for int
+        self.labeled_cutoffs = labeled_cutoffs
+        self.percent_format = percent_format
+        self.grouped_col = 'group'
+        self.supression = supression
+        # These guys will be used to map the colors and labels
+        self.group_nums = []
+        self.group_names = []
+        self.colordict = {}
+
+        # Set defaults for cat_name
+        if cat_name is None:
+            self.cat_name = 'Population'
+        else:
+            self.cat_name = cat_name
+
+        # Select the valid columns for the data
+        self.valid_cols = [
+            x for x in [
+                self.FIPS_col, self.cat_col, self.total_col] if x is not None]
+        self.data = self.data.loc[:, self.valid_cols]
+        self._merge_geodataframe()
+
+        # this cycles through the valid columns to make float format
+        self._totals_to_float()
+
+        # Find which columns are being used and if needed, calculate the ratio
+        self._calculate_cat()
+        self._make_binned_cats()
+
+        # Map the cutoff labels to the groups
+        self._map_labels()
+
+    def _calculate_cat(self):
+        # Could have totals only
+        if self.cat_col is None:
+            self.calculated_cat = self.total_col
+        # Or category only
+        elif self.total_col is None:
+            self.calculated_cat = self.cat_col
+        # but if there's both it's a ratio
+        else:
+            self.calculated_cat = 'ratio'
+            self.data[self.calculated_cat] = np.where(self.data[
+                self.cat_col] == self.supression or self.data[
+                self.total_col] == self.supression, self.supression, self.data[
+                self.cat_col].astype(float)/self.data[
+                self.total_col].astype(float))
+        # Reformat percentages
+        if self.percent_format and (self.data[self.calculated_cat] < 1).all():
+            self.data[self.calculated_cat] = self.data[
+                self.calculated_cat]*100.0
+        # Round
+        self.data[self.calculated_cat] = self.data[
+            self.calculated_cat].round(self.prec)
+
+    def _make_binned_cats(self):
+        '''Makes the group column. The group column names categories according
+        to the cutoff bins. Then maps the group to a column called, color,
+        which codes the groups with integers
+        '''
+        # take the supressed data out
+        supressed_data = self.data[self.data[
+            self.calculated_cat] == self.supression]
+        supressed_data[self.grouped_col] = -1
+
+        self.data = [self.data[
+            self.calculated_cat] != self.supression]
+
+        if self.bins is None:
+            self.group_nums = range(1, self.num_cats+1)
+            # qcut divides data into equal groups
+            self.data[self.grouped_col], self.bins = pd.qcut(
+                self.data[self.calculated_cat],
+                self.num_cats,
+                labels=self.group_nums,
+                retbins=True,
+                precision=self.prec)
+        else:
+            self.bins = np.asarray(self.bins).round(self.prec)
+            # The lower bound is zero here
+            if self.bins[0] != 0:
+                self.bins = [0] + self.bins
+            # punit is added to include values that have been roudnded up
+            self.bins[-1] += self.punit
+            # for too many bins get rid of overlaps
+            self.bins = np.unique(self.bins).tolist()
+            self.num_cats = len(self.bins)-1
+            self.group_nums = range(1, self.num_cats+1)
+            self.data[self.grouped_col] = pd.cut(
+                self.data[self.calculated_cat],
+                self.bins,
+                labels=self.group_nums,
+                retbins=False,
+                include_lowest=True)
+            self.data = pd.concat([self.data, supressed_data], axis=0)
+
+    def _map_labels(self):
+        '''Takes the cutoffs and creates labels)
+        '''
+        sign = ''
+        bottom = '0'
+        bottom_format = '{:1.%sf}' % str(self.prec)
+        if self.percent_format:
+            sign = '%'
+        for i, c in enumerate(self.bins[1:]):
+            cutoff = bottom_format.format(c)
+            if i == 0:
+                self.group_names.append(cutoff + sign + ' or less')
+            elif i == len(self.bins)-2:
+                self.group_names.append(bottom + sign + ' or more')
+            else:
+                self.group_names.append(
+                    bottom + '%' + '-' + cutoff + sign)
+
+            if self.labeled_cutoffs is not None:
+                if i in self.labeled_cutoffs.keys():
+                    self.group_names[i] = self.group_names[
+                        i] + ' ' + self.labeled_cutoffs[i]
+            bottom = bottom_format.format(c + self.punit)
+            if any(self.data[self.calculated_cat] == self.supressed):
+                self.group_names = ['Data supressed'] + self.group_names
+
+        self.data[self.labels_col] = self.data[
+            self.grouped_col].cat.rename_categories(self.group_names)
 
     def _totals_to_float(self):
         '''Makes sure population counts are float and not string
@@ -602,7 +751,7 @@ class ChoroplethStyle(object):
         img_size_dict = {'small': 75, 'med': 100, 'large': 150}
         if size is None:
             size = 'med'
-        if isinstance(size, basestring):
+        if isinstance(size, string_types):
             try:
                 size = img_size_dict[size]
             except:
@@ -657,14 +806,14 @@ class Choropleth(object):
             city_info(CityInfo object)
             outpath(str): specify an outpath if different than the current one
             '''
-        if isinstance(ch_style, basestring) or ch_style is None:
+        if isinstance(ch_style, string_types) or ch_style is None:
             ch_style = ChoroplethStyle(ch_style)
         self.ch_style = ch_style
         self.area_data = area_data
         self.city_info = city_info
         self.out_path = os.path.normpath(out_path)
         self.savepdf = savepdf
-        self.showplot= showplot
+        self.showplot = showplot
         self.num_bins = len(self.area_data.bins)
 
         self.legx = self.ch_style.legx
@@ -739,7 +888,6 @@ class Choropleth(object):
                 xytext=self.data_text_xy, size='xx-small', ha=l.ha,
                 va=l.va)
 
-
     def _add_title(self):
         '''Creates and positions the plot title'''
         if len(self.title) > self.ch_style.ttl_char_limit:
@@ -753,10 +901,10 @@ class Choropleth(object):
     def _draw_legend(self):
         '''Draws the legend'''
         leg_patches=[mpatches.Rectangle(xy=(0, 0),
-                                          width=1, height=1, facecolor=cc,
-                                          edgecolor=self.ch_style.border_color,
-                                          lw=1,
-                                          alpha=1
+                                        width=1, height=1, facecolor=cc,
+                                        edgecolor=self.ch_style.border_color,
+                                        lw=1,
+                                        alpha=1
                                           ) for cc in self.rgbs]
         leg = self.ax.legend(handles=leg_patches,
                              labels=self.area_data.group_names,
@@ -804,6 +952,6 @@ class Choropleth(object):
         # Create the output
         outfile = os.path.join(self.out_path, self.area_data.cat_name)
         plt.savefig(outfile, dpi=self.ch_style.resolution, bbox_inches='tight')
-    
+   
     def show_plot(self):
         plt.show()
