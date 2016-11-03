@@ -14,7 +14,6 @@ __all__ = [
     'Choropleth'
 ]
 
-
 import geopandas as gpd
 import numpy as np
 import pandas as pd
@@ -427,7 +426,8 @@ class AreaPopDataset(object):
                  total_col=None, footnote='', cat_name=None, title='',
                  bins=None, num_cats=4, precision=1,
                  labeled_cutoffs=None, percent_format=False,
-                 null='nan', supression='s'):
+                 exceptions={'nan': ['Insufficient data'],
+                             'sup': ['Data supressed']}):
         '''An object that holds data elements for the choropleth map.
         Attributes:
             data(pandas.DataFrame): dataframe with population data by county
@@ -458,7 +458,8 @@ class AreaPopDataset(object):
             labeled_cutoffs(dict{category_number(int, 0-indexed),
                 special label(str)}): specified labels for the categories.
             percent_format(bool): indicates whether cutoffs are percentages
-            supression(str): indicates ratio value that represents supression.
+            exceptions(dict): indicates string value for supression, nulls,
+                etc. in keys category label in valuelist[0].
                 '''
         self.data = data
         # Reads in a geodtaframe or a filename and converts it
@@ -481,7 +482,8 @@ class AreaPopDataset(object):
         self.labeled_cutoffs = labeled_cutoffs
         self.percent_format = percent_format
         self.grouped_col = 'group'
-        self.supression = supression
+        self.exceptions = exceptions
+
         # These guys will be used to map the colors and labels
         self.group_nums = []
         self.group_names = []
@@ -499,12 +501,19 @@ class AreaPopDataset(object):
                 self.FIPS_col, self.cat_col, self.total_col] if x is not None]
         self.data = self.data.loc[:, self.valid_cols]
         self._merge_geodataframe()
-
         # this cycles through the valid columns to make float format
         self._totals_to_float()
 
         # Find which columns are being used and if needed, calculate the ratio
         self._calculate_cat()
+        self.true_exceptions = []
+        for key in self.exceptions:
+            if any(self.data[self.calculated_cat]) == key:
+                self.true_exceptions.append(key)
+        
+        # TODO takeout supressd data
+
+        self._format_calculated_cat()
         self._make_binned_cats()
 
         # Map the cutoff labels to the groups
@@ -520,11 +529,11 @@ class AreaPopDataset(object):
         # but if there's both it's a ratio
         else:
             self.calculated_cat = 'ratio'
-            self.data[self.calculated_cat] = np.where(self.data[
-                self.cat_col] == self.supression or self.data[
-                self.total_col] == self.supression, self.supression, self.data[
-                self.cat_col].astype(float)/self.data[
-                self.total_col].astype(float))
+            # Do we need to allow for total exceptions here?
+            self.data[self.calculated_cat] = self.data[self.cat_col].astype(
+                float)/self.data[self.total_col].astype(float)
+    
+    def _format_calculated_cat(self):
         # Reformat percentages
         if self.percent_format and (self.data[self.calculated_cat] < 1).all():
             self.data[self.calculated_cat] = self.data[
@@ -539,12 +548,6 @@ class AreaPopDataset(object):
         which codes the groups with integers
         '''
         # take the supressed data out
-        supressed_data = self.data[self.data[
-            self.calculated_cat] == self.supression]
-        supressed_data[self.grouped_col] = -1
-
-        self.data = [self.data[
-            self.calculated_cat] != self.supression]
 
         if self.bins is None:
             self.group_nums = range(1, self.num_cats+1)
@@ -572,7 +575,6 @@ class AreaPopDataset(object):
                 labels=self.group_nums,
                 retbins=False,
                 include_lowest=True)
-            self.data = pd.concat([self.data, supressed_data], axis=0)
 
     def _map_labels(self):
         '''Takes the cutoffs and creates labels)
@@ -597,8 +599,6 @@ class AreaPopDataset(object):
                     self.group_names[i] = self.group_names[
                         i] + ' ' + self.labeled_cutoffs[i]
             bottom = bottom_format.format(c + self.punit)
-            if any(self.data[self.calculated_cat] == self.supressed):
-                self.group_names = ['Data supressed'] + self.group_names
 
         self.data[self.labels_col] = self.data[
             self.grouped_col].cat.rename_categories(self.group_names)
