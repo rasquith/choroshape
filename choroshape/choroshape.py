@@ -427,7 +427,7 @@ class AreaPopDataset(object):
                  bins=None, num_cats=4, precision=1,
                  labeled_cutoffs=None, percent_format=False,
                  exceptions={'nan': ['Insufficient data'],
-                             'sup': ['Data supressed']}):
+                             'S': ['Data supressed']}):
         '''An object that holds data elements for the choropleth map.
         Attributes:
             data(pandas.DataFrame): dataframe with population data by county
@@ -510,7 +510,10 @@ class AreaPopDataset(object):
         for key in self.exceptions:
             if any(self.data[self.calculated_cat]) == key:
                 self.true_exceptions.append(key)
-        
+                self.exceptions[key].append(self.data[
+                    self.data[self.calculated_cat] == key])
+                self.data = self.data[self.data[self.calculated_cat] != key]
+
         # TODO takeout supressd data
 
         self._format_calculated_cat()
@@ -529,10 +532,19 @@ class AreaPopDataset(object):
         # but if there's both it's a ratio
         else:
             self.calculated_cat = 'ratio'
-            # Do we need to allow for total exceptions here?
-            self.data[self.calculated_cat] = self.data[self.cat_col].astype(
-                float)/self.data[self.total_col].astype(float)
-    
+            self.data[self.calculated_cat] = np.nan
+            # How to do this more efficiently?
+            for idx, row in self.data.iterrows():
+                if self.data.ix[idx, self.cat_col] in list(
+                    self.exceptions.keys()):
+                    self.data.ix[idx, self.calculated_cat]  = self.data.ix[idx, self.cat_col]
+                elif row[self.total_col] in list(self.exceptions.keys()):
+                    self.data.ix[idx, self.calculated_cat]  = row[self.total_col]
+                else:
+                    self.data.ix[idx, self.calculated_cat] = float(
+                        self.data.ix[idx, self.cat_col]) / float(
+                        self.data.ix[idx, self.total_col])
+
     def _format_calculated_cat(self):
         # Reformat percentages
         if self.percent_format and (self.data[self.calculated_cat] < 1).all():
