@@ -1,6 +1,6 @@
 ## Synopsis
 
-The following code creates choropleth maps and is built using geopandas data sets.
+ This package creates county-level choropleth maps for demographic datasets.
 
 ## Contributors
 
