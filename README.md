@@ -1,6 +1,6 @@
 ## Synopsis
 
-The following code creates choropleth maps from CSV datasets.
+The following code creates choropleth maps and is built using geopandas data sets.
 
 ## Contributors
 
