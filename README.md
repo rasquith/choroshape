@@ -1,6 +1,6 @@
 ## Synopsis
 
-The following code calculates WIC Potential Eligibles for Texas.
+The following code creates choropleth maps from CSV datasets.
 
 ## Contributors
 
