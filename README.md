@@ -1,6 +1,6 @@
 ## Synopsis
 
- This package creates county-level choropleth maps for demographic datasets.
+ This package creates county-level choropleth maps for demographic datasets. See examples.
 
 ## Contributors
 
