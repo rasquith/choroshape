@@ -22,7 +22,6 @@ except ImportError:
 
 #Let's start by making some datasets for global testing using the ACS API
 mytoken = ''  # Put your token here
-mytoken = 'acbb5df8ee5207bbdae91c2d8b878b4123011a90'
 OUTPATH = os.path.expanduser('~/Desktop/Example_Files/Test/')
 
 
