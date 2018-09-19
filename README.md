@@ -7,7 +7,7 @@ Choroshape for Python creates, U.S. county-level choropleth maps for demographic
 3. The user can easily specify cutoffs for color bins, or let choroshape calculate optimal bin ranges
 4. Choroshape style objects allow the user to easily choose single-color schemes and optimally place the legend and title on the map output. Defualt maps styles are created with matpotlib.
  
- See examples for more details.
+ See [examples](https://github.com/rasquith/choroshape/blob/master/examples/) for more details.
 
 ## Contributors
 
